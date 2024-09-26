@@ -1,33 +1,178 @@
-﻿@{
-    ViewBag.Title = "Home Page";
+﻿@model List<BreakfastOrderSystem.Site.Models.ViewModels.OrderDetailVm>
+
+@{
+    ViewBag.Title = "待處理訂單";
 }
 
-@*<main>
-    <section class="row" aria-labelledby="aspnetTitle">
-        <h1 id="title">ASP.NET</h1>
-        <p class="lead">ASP.NET is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
-        <p><a href="https://asp.net" class="btn btn-primary btn-md">Learn more &raquo;</a></p>
-    </section>
+<style>
+    /* 固定表格佈局，讓欄位寬度不因內容改變 */
+    table {
+        table-layout: fixed; /* 固定表格佈局 */
+        width: 100%; /* 確保表格佔據整個可用空間 */
+    }
 
-    <div class="row">
-        <section class="col-md-4" aria-labelledby="gettingStartedTitle">
-            <h2 id="gettingStartedTitle">Getting started</h2>
-            <p>
-                ASP.NET MVC gives you a powerful, patterns-based way to build dynamic websites that
-                enables a clean separation of concerns and gives you full control over markup
-                for enjoyable, agile development.
-            </p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301865">Learn more &raquo;</a></p>
-        </section>
-        <section class="col-md-4" aria-labelledby="librariesTitle">
-            <h2 id="librariesTitle">Get more libraries</h2>
-            <p>NuGet is a free Visual Studio extension that makes it easy to add, remove, and update libraries and tools in Visual Studio projects.</p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301866">Learn more &raquo;</a></p>
-        </section>
-        <section class="col-md-4" aria-labelledby="hostingTitle">
-            <h2 id="hostingTitle">Web Hosting</h2>
-            <p>You can easily find a web hosting company that offers the right mix of features and price for your applications.</p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301867">Learn more &raquo;</a></p>
-        </section>
+    /* 設定表頭欄位的固定寬度 */
+    th {
+        width: 33%; /* 可以根據需要設置具體的寬度百分比或像素值 */
+    }
+
+    /* 限制加選資訊欄位的寬度並啟用換行 */
+    .add-info {
+        max-width: 150px; /* 限制最大寬度 */
+        word-wrap: break-word; /* 讓文字自動換行 */
+        overflow-wrap: break-word; /* 保證長字串換行 */
+        white-space: normal; /* 允許換行 */
+    }
+
+    /* 設置表格內其他列的固定寬度 */
+    .product-name, .quantity {
+        max-width: 100px; /* 限制其他欄位的最大寬度 */
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        white-space: normal;
+    }
+</style>
+
+<h3>待處理訂單</h3>
+
+<!-- 隱藏的模板，用於克隆並動態填充訂單 -->
+@foreach (var order in Model)
+{
+    <div class="order-template" id="order-@order.OrderId">
+        <div class="row mb-2 align-items-center">
+            <div class="col pickup-id">取餐編號：<span>@order.OrderId</span></div>
+            <div class="col member-id">會員名稱：<span>@order.MemberName</span></div>
+            <div class="col total-amount">總金額：<span style="color: red;">@order.TotalPrice</span></div>
+            <div class="col order-actions">
+                <!-- 確認按鈕，點擊後更新狀態為已取餐 (2) -->
+                <button class="btn btn-sm btn-success" type="button" onclick="confirmStatusChange(@order.OrderId, 2)">確認</button>
+                <!-- 棄單按鈕，點擊後更新狀態為已棄單 (4) -->
+                <button class="btn btn-sm btn-danger" type="button" onclick="confirmStatusChange(@order.OrderId, 4)">棄單</button>
+            </div>
+        </div>
+
+        <!-- 商品列表表格 -->
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th scope="col">商品名稱</th>
+                    <th scope="col">加選資訊</th>
+                    <th scope="col">商品數量</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in order.Items)
+                {
+                    <tr>
+                        <td>@item.ProductName</td>
+                        <td>@string.Join(", ", item.AddOnInfo.Select(a => a.AddOnName))</td>
+                        <td>@item.Quantity</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
-</main>*@
+}
+}
+@section scripts {
+    <script>
+        // 將 Razor 模型數據序列化為 JavaScript 對象
+        var orders = @Html.Raw(Json.Encode(Model));
+
+        function loadPendingOrders() {
+            const mainContent = document.querySelector(".main-content");
+            mainContent.style.overflowY = "auto"; // 顯示滾動條
+
+            // 找到隱藏的訂單模板
+            const template = document.getElementById("order-template");
+
+            // 遍歷每個訂單，這裡使用的是從 Razor 傳遞過來的模型數據
+            orders.forEach((order) => {
+                // 克隆訂單模板
+                const orderClone = template.cloneNode(true);
+                orderClone.style.display = "block"; // 顯示克隆的模板
+
+                // 填充訂單基本資訊
+                orderClone.querySelector(".pickup-id span").textContent = order.OrderId || 'N/A';
+                orderClone.querySelector(".member-id span").textContent = order.MemberName || 'N/A';
+                orderClone.querySelector(".total-amount span").textContent = order.TotalPrice || '0';
+
+                // 填充商品項目
+                const orderItemsContainer = orderClone.querySelector(".order-items");
+
+                // 檢查是否有商品資料
+                if (order.Items && order.Items.length > 0) {
+                    order.Items.forEach((item) => {
+                        const row = document.createElement("tr");
+
+                        const itemName = document.createElement("td");
+                        itemName.classList.add('product-name'); // 使用樣式
+                        itemName.textContent = item.ProductName || 'N/A';
+
+                        const addInfo = document.createElement("td");
+                        addInfo.classList.add('add-info'); // 使用樣式
+                        // 檢查是否有加選資訊
+                        if (item.AddOnInfo && item.AddOnInfo.length > 0) {
+                            addInfo.textContent = item.AddOnInfo.map(addOn => addOn.AddOnName).join(", ");
+                        } else {
+                            addInfo.textContent = "無";
+                        }
+
+                        const quantity = document.createElement("td");
+                        quantity.classList.add('quantity'); // 使用樣式
+                        quantity.textContent = item.Quantity || 0;
+
+                        row.appendChild(itemName);
+                        row.appendChild(addInfo);
+                        row.appendChild(quantity);
+                        orderItemsContainer.appendChild(row);
+                    });
+                } else {
+                    // 若沒有商品資料，顯示提示
+                    const emptyRow = document.createElement("tr");
+                    const emptyMessage = document.createElement("td");
+                    emptyMessage.setAttribute('colspan', '3');
+                    emptyMessage.textContent = "無商品資料";
+                    emptyRow.appendChild(emptyMessage);
+                    orderItemsContainer.appendChild(emptyRow);
+                }
+
+                // 將訂單克隆添加到主內容
+                mainContent.appendChild(orderClone);
+            });
+        }
+
+        // 當 DOM 加載完畢時執行
+        document.addEventListener("DOMContentLoaded", loadPendingOrders);
+
+ function confirmStatusChange(orderId, status) {
+            // 彈出確認對話框
+            var actionText = status === 2 ? "確認已取餐" : "確認棄單";
+            if (confirm("您確定要" + actionText + "嗎？")) {
+                // 發送 AJAX 請求更新訂單狀態
+                $.ajax({
+                    url: '@Url.Action("UpdateOrderStatus", "Home")', // 呼叫控制器中的 UpdateOrderStatus Action
+                    type: 'POST',
+                    data: {
+                        orderId: orderId,
+                        orderStatus: status,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() // CSRF 防護
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            alert('訂單狀態更新成功！');
+                            // 移除當前訂單，因為狀態已改變
+                            $('#order-' + orderId).remove();
+                        } else {
+                            alert('訂單狀態更新失敗，請重試！');
+                        }
+                    },
+                    error: function () {
+                        alert('訂單狀態更新失敗，請檢查網絡連接！');
+                    }
+                });
+            }
+        }
+
+    </script>
+}
