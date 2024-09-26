@@ -1,0 +1,400 @@
+﻿@model List<BreakfastOrderSystem.Site.Models.ViewModels.OrderlistVm>
+
+@{
+    ViewBag.Title = "Orderlist";
+}
+
+<h2 class="fw-bold mt-2 mb-4">訂單列表</h2>
+
+<div class="container" style="background-color: white; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; min-height: 400px;">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex align-items-center flex-wrap" style="gap: 1rem;">
+                <!-- 左側的下拉選單 -->
+                <div class="dropdown me-2">
+                    <a class="btn btn-light dropdown-toggle" href="#" role="button" id="statusDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        訂單狀態
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="statusDropdown">
+                        <li><a class="dropdown-item" href="#" data-value="1">未取餐</a></li>
+                        <li><a class="dropdown-item" href="#" data-value="2">已取餐</a></li>
+                        <li><a class="dropdown-item" href="#" data-value="3">已取消</a></li>
+                        <li><a class="dropdown-item" href="#" data-value="4">已棄單</a></li>
+                    </ul>
+                </div>
+
+                <!-- 開始日期 -->
+                <div class="d-flex align-items-center me-2">
+                    <label for="startDate" class="mb-0 me-1" style="margin-right: 0.5rem;">開始日期: </label>
+                    <input type="date" id="startDate" class="form-control" aria-label="Start Date" style="flex: 1;">
+                </div>
+
+                <!-- 結束日期 -->
+                <div class="d-flex align-items-center me-2">
+                    <label for="endDate" class="mb-0 me-1" style="margin-right: 0.5rem;">結束日期: </label>
+                    <input type="date" id="endDate" class="form-control" aria-label="End Date" style="flex: 1;">
+                </div>
+
+                <!-- 搜尋 -->
+                <button class="btn btn-light" type="button" onclick="handleSearch()">搜尋</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-grow-1">
+        <table class="table table-striped table-bordered" style="table-layout: fixed; width: 100%;">
+            <thead>
+                <tr>
+                    <th scope="col">訂單編號</th>
+                    <th scope="col">下單時間</th>
+                    <th scope="col">取餐時間</th>
+                    <th scope="col">總金額</th>
+                    <th scope="col">訂單狀態</th>
+                    <th scope="col">會員名稱</th>
+                    <th scope="col">操作</th>
+                </tr>
+            </thead>
+            <tbody id="orderTableBody">
+                <!-- Rows will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <nav aria-label="Page navigation example" class="mt-4">
+        <ul class="pagination justify-content-center" id="pagination">
+            <!-- Pagination items will be inserted here if needed -->
+        </ul>
+    </nav>
+</div>
+
+<!-- Modal for Order Details -->
+<div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <!-- 確保使用 modal-xl 放大彈出視窗 -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDetailModalLabel">訂單明細</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <!-- 第一行：訂單編號和會員名稱 -->
+                    <div class="row mb-3">
+                        <!-- 訂單編號 (左上) -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <label for="modalOrderId" class="form-label me-3" style="white-space: nowrap;">訂單編號:</label> <!-- 加入 white-space: nowrap; -->
+                                <input type="text" class="form-control" id="modalOrderId" readonly>
+                            </div>
+                        </div>
+                        <!-- 會員名稱 (右上) -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <label for="modalMemberName" class="form-label me-3" style="white-space: nowrap;">會員名稱:</label> <!-- 加入 white-space: nowrap; -->
+                                <input type="text" class="form-control" id="modalMemberName" readonly>
+                                @*<button type="button" class="btn btn-dark ms-3">加入黑名單</button>*@
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 第二行：訂單金額和點數折抵 -->
+                    <div class="row mb-3">
+                        <!-- 訂單金額 (左下) -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <label for="modalTotalPrice" class="form-label me-3" style="white-space: nowrap;">訂單金額:</label> <!-- 加入 white-space: nowrap; -->
+                                <input type="text" class="form-control" id="modalTotalPrice" readonly>
+                            </div>
+                        </div>
+                        <!-- 點數折抵 (右下) -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <label for="modalUsedPoints" class="form-label me-3" style="white-space: nowrap;">點數折抵:</label> <!-- 加入 white-space: nowrap; -->
+                                <input type="text" class="form-control" id="modalUsedPoints" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 訂單品項表格 -->
+                    <h4 class="mt-4">訂單品項：</h4>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th scope="col">商品名稱</th>
+                                <th scope="col">單價</th>
+                                <th scope="col">數量</th>
+                                <th scope="col">加選資訊</th>
+                                <th scope="col">加選數量</th>
+                                <th scope="col">小計</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalOrderItems">
+                            <!-- Rows will be inserted here dynamically -->
+                        </tbody>
+                    </table>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+@section Scripts {
+    <script>
+        // 將 Razor 模型數據序列化為 JavaScript 對象
+        let initialOrders = @Html.Raw(Json.Encode(Model));
+        let allOrders = [...initialOrders]; // 創建一個副本來進行後續操作
+        let currentPage = 1;
+        const ITEMS_PER_PAGE = 5;
+        const MAX_PAGE_DISPLAY = 5;
+        let selectedStatus = ""; // 用於儲存選擇的訂單狀態
+
+        // 更新選擇的訂單狀態
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function () {
+                selectedStatus = this.getAttribute('data-value'); // 取得選擇的狀態
+                document.getElementById('statusDropdown').textContent = this.textContent; // 更新顯示文字
+                handleSearch(); // 觸發篩選
+            });
+        });
+
+        function renderTable() {
+            const tbody = document.getElementById("orderTableBody");
+            tbody.innerHTML = ""; // 清空現有的表格內容
+
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const currentOrders = allOrders.slice(startIndex, endIndex);
+
+            currentOrders.forEach((order) => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${order.OrderId}</td>
+                    <td>${formatDate(order.OrderTime)}</td>
+                    <td>${formatDate(order.PickUpTime)}</td>
+                    <td>${order.TotalPrice}</td>
+                    <td>${getOrderStatusText(order.OrderStatus)}</td> <!-- 使用狀態轉換函數 -->
+                    <td>${order.MemberName}</td>
+                    <td>
+                      <a class="btn btn-light edit-btn" href="#!" role="button" data-order-id="${order.OrderId}">
+                        <i class="fa-solid fa-circle-info"></i> 明細
+                      </a>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // 綁定明細按鈕的事件處理函數
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const orderId = this.getAttribute('data-order-id');
+                    showOrderDetails(orderId); // 顯示訂單明細的函數
+                });
+            });
+        }
+
+        // 顯示訂單明細
+       function showOrderDetails(orderId) {
+    $.ajax({
+        url: '@Url.Action("GetOrderDetails", "Orderlist")', // 調用控制器的 GetOrderDetails 方法
+        type: 'GET',
+        data: { orderId: orderId },
+        success: function (response) {
+            if (response.success) {
+                // 填充訂單編號、會員名稱、訂單金額、點數折抵
+                $('#modalOrderId').val(response.data.OrderId);
+                $('#modalMemberName').val(response.data.MemberName);
+                $('#modalTotalPrice').val(response.data.TotalPrice);
+                $('#modalUsedPoints').val(response.data.UsedPoints);
+
+                // 清空之前的表格
+                const tbody = $("#modalOrderItems");
+                tbody.empty();
+
+                // 遍歷訂單項目並新增到表格中
+                response.data.Items.forEach(item => {
+                    let addOnInfo = item.AddOnInfo.length > 0 ? item.AddOnInfo.map(a => `${a.AddOnName}`).join(', ') : '不選';
+                    let addOnQuantity = item.AddOnInfo.length > 0 ? item.AddOnInfo.map(a => a.AddOnQuantity).join(', ') : '-';
+
+                    tbody.append(`
+                        <tr>
+                            <td>${item.ProductName}</td>
+                            <td>${item.Price}</td>
+                            <td>${item.Quantity}</td>
+                            <td>${addOnInfo}</td>
+                            <td>${addOnQuantity}</td>
+                            <td>${item.Subtotal}</td>
+                        </tr>
+                    `);
+                });
+
+                // 顯示模態視窗
+                $('#orderDetailModal').modal('show');
+            } else {
+                alert(response.message);
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error(xhr, status, error);
+            alert('獲取訂單明細時發生錯誤');
+        }
+    });
+}
+
+
+        // 狀態轉換函數
+        function getOrderStatusText(status) {
+            switch (status) {
+                case 1:
+                    return "未取餐";
+                case 2:
+                    return "已取餐";
+                case 3:
+                    return "已取消";
+                case 4:
+                    return "已棄單";
+                default:
+                    return "未知狀態";
+            }
+        }
+
+        function renderPagination() {
+            const pagination = document.getElementById("pagination");
+            pagination.innerHTML = ""; // 清空現有的分頁
+
+            const totalPages = Math.ceil(allOrders.length / ITEMS_PER_PAGE);
+            if (totalPages === 0) return;
+
+            let startPage = 1;
+            let endPage = totalPages;
+
+            if (totalPages > MAX_PAGE_DISPLAY) {
+                if (currentPage <= Math.floor(MAX_PAGE_DISPLAY / 2)) {
+                    startPage = 1;
+                    endPage = MAX_PAGE_DISPLAY;
+                } else if (currentPage + Math.floor(MAX_PAGE_DISPLAY / 2) >= totalPages) {
+                    startPage = totalPages - MAX_PAGE_DISPLAY + 1;
+                    endPage = totalPages;
+                } else {
+                    startPage = currentPage - Math.floor(MAX_PAGE_DISPLAY / 2);
+                    endPage = currentPage + Math.floor(MAX_PAGE_DISPLAY / 2);
+                }
+            }
+
+            const prevLi = document.createElement("li");
+            prevLi.className = "page-item" + (currentPage === 1 ? " disabled" : "");
+            prevLi.innerHTML = `
+                <a class="page-link" href="#" aria-label="Previous">
+                  <span aria-hidden="true">&laquo;</span>
+                </a>
+            `;
+            prevLi.addEventListener("click", function (e) {
+                e.preventDefault();
+                if (currentPage > 1) {
+                    currentPage--;
+                    updatePagination();
+                }
+            });
+            pagination.appendChild(prevLi);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement("li");
+                pageLi.className = "page-item" + (i === currentPage ? " active" : "");
+                pageLi.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                pageLi.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    currentPage = i;
+                    updatePagination();
+                });
+                pagination.appendChild(pageLi);
+            }
+
+            const nextLi = document.createElement("li");
+            nextLi.className = "page-item" + (currentPage === totalPages ? " disabled" : "");
+            nextLi.innerHTML = `
+                <a class="page-link" href="#" aria-label="Next">
+                  <span aria-hidden="true">&raquo;</span>
+                </a>
+            `;
+            nextLi.addEventListener("click", function (e) {
+                e.preventDefault();
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updatePagination();
+                }
+            });
+            pagination.appendChild(nextLi);
+        }
+
+        function updatePagination() {
+            renderTable();
+            renderPagination();
+        }
+
+        function handleSearch() {
+            const startDate = document.getElementById("startDate").value;
+            const endDate = document.getElementById("endDate").value;
+
+            let filteredOrders = [...initialOrders];
+
+            // 如果選擇了訂單狀態，進行篩選
+            if (selectedStatus) {
+                filteredOrders = filteredOrders.filter((order) => order.OrderStatus == selectedStatus); // 狀態是數字，這裡使用 "=="
+            }
+
+            // 篩選日期範圍，包含開始日期和結束日期
+            if (startDate || endDate) {
+                const start = startDate ? new Date(startDate) : null;
+                const end = endDate ? new Date(endDate) : null;
+
+                filteredOrders = filteredOrders.filter((order) => {
+                    const orderDate = new Date(parseInt(order.OrderTime.match(/\d+/)[0], 10));
+
+                    const isAfterStart = !start || orderDate.setHours(0, 0, 0, 0) >= start.setHours(0, 0, 0, 0);
+                    const isBeforeEnd = !end || orderDate.setHours(23, 59, 59, 999) <= end.setHours(23, 59, 59, 999);
+
+                    return isAfterStart && isBeforeEnd;
+                });
+            }
+
+            if (filteredOrders.length === 0) {
+                document.getElementById("orderTableBody").innerHTML = `<tr><td colspan="7">沒有找到匹配的訂單</td></tr>`;
+                return;
+            }
+
+            allOrders = filteredOrders;
+            currentPage = 1;
+            updatePagination();
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            renderTable();
+            renderPagination();
+        });
+
+        // 格式化日期的函数
+        function formatDate(jsonDate) {
+            if (jsonDate.startsWith("/Date(") && jsonDate.endsWith(")/")) {
+                const milliseconds = parseInt(jsonDate.substring(6, jsonDate.length - 2), 10);
+                const date = new Date(milliseconds);
+
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从0开始，需要加1
+                const day = String(date.getDate()).padStart(2, '0'); // 確保日期有兩位數
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+
+                return `${year}/${month}/${day} ${hours}:${minutes}`;
+            }
+
+            return jsonDate; // 如果不是 /Date()/ 格式，則直接返回
+        }
+    </script>
+}
