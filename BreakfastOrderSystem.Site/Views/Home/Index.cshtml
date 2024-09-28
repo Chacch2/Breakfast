@@ -73,7 +73,7 @@
         </table>
     </div>
 }
-}
+
 @section scripts {
     <script>
         // 將 Razor 模型數據序列化為 JavaScript 對象
@@ -145,34 +145,34 @@
         // 當 DOM 加載完畢時執行
         document.addEventListener("DOMContentLoaded", loadPendingOrders);
 
- function confirmStatusChange(orderId, status) {
-            // 彈出確認對話框
-            var actionText = status === 2 ? "確認已取餐" : "確認棄單";
-            if (confirm("您確定要" + actionText + "嗎？")) {
-                // 發送 AJAX 請求更新訂單狀態
-                $.ajax({
-                    url: '@Url.Action("UpdateOrderStatus", "Home")', // 呼叫控制器中的 UpdateOrderStatus Action
-                    type: 'POST',
-                    data: {
-                        orderId: orderId,
-                        orderStatus: status,
-                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() // CSRF 防護
-                    },
-                    success: function (response) {
-                        if (response.success) {
-                            alert('訂單狀態更新成功！');
-                            // 移除當前訂單，因為狀態已改變
-                            $('#order-' + orderId).remove();
-                        } else {
-                            alert('訂單狀態更新失敗，請重試！');
-                        }
-                    },
-                    error: function () {
-                        alert('訂單狀態更新失敗，請檢查網絡連接！');
-                    }
-                });
+         function confirmStatusChange(orderId, status) {
+    var actionText = status === 2 ? "確認已取餐" : "確認棄單";
+
+    if (confirm("您確定要" + actionText + "嗎？")) {
+        // 發送 AJAX 請求更新訂單狀態
+        $.ajax({
+            url: '@Url.Action("UpdateOrderStatus", "Home")', // 呼叫控制器中的 UpdateOrderStatus Action
+            type: 'POST',
+            data: {
+                orderId: orderId,
+                orderStatus: status
+            },
+            success: function (response) {
+                if (response.success) {
+                    alert('訂單狀態更新成功！');
+                    // 移除當前訂單，因為狀態已改變
+                    $('#order-' + orderId).remove();
+                } else {
+                    alert('訂單狀態更新失敗，請重試！');
+                }
+            },
+            error: function () {
+                alert('訂單狀態更新失敗，請檢查網絡連接！');
             }
-        }
+        });
+    }
+}
+
 
     </script>
 }

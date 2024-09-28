@@ -14,11 +14,14 @@ namespace BreakfastOrderSystem.Site.Models.ViewModels
         public string MemberName { get; set; }
         public decimal? TotalPrice { get; set; }  // 可空的 decimal
         public int? UsedPoints { get; set; }      // 可空的 int
-
+       
         public int OrderStatus { get; set; }
 
         
         public List<OrderItemVm> Items { get; set; }
+        public bool IsBlacklisted { get; internal set; }
+        public int MemberID { get; internal set; }
+        public int EarnedPoints { get; internal set; }
     }
 
     public class OrderItemVm

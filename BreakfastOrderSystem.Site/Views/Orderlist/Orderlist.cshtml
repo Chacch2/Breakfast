@@ -4,6 +4,51 @@
     ViewBag.Title = "Orderlist";
 }
 
+<style>
+    /* 隐藏默认的复选框 */
+    .form-check-input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* 创建自定义复选框框架 */
+    .form-check-label {
+        position: relative;
+        padding-left: 30px;
+        cursor: pointer;
+    }
+
+        /* 定义复选框的样式 */
+        .form-check-label:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #007bff; /* 边框颜色 */
+            border-radius: 4px; /* 圆角效果 */
+            background-color: white; /* 背景色 */
+        }
+
+    /* 当复选框被选中时的样式 */
+    .form-check-input:checked + .form-check-label:before {
+        background-color: #007bff; /* 选中时的背景颜色 */
+        border-color: #007bff; /* 选中时的边框颜色 */
+    }
+
+    /* 显示打勾符号 */
+    .form-check-input:checked + .form-check-label:after {
+        content: "\2713"; /* 勾选符号 */
+        position: absolute;
+        top: 0px;
+        left: 4px;
+        font-size: 18px;
+        color: white; /* 勾选符号颜色 */
+    }
+
+</style>
 <h2 class="fw-bold mt-2 mb-4">訂單列表</h2>
 
 <div class="container" style="background-color: white; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; min-height: 400px;">
@@ -92,7 +137,10 @@
                             <div class="d-flex align-items-center">
                                 <label for="modalMemberName" class="form-label me-3" style="white-space: nowrap;">會員名稱:</label> <!-- 加入 white-space: nowrap; -->
                                 <input type="text" class="form-control" id="modalMemberName" readonly>
-                                @*<button type="button" class="btn btn-dark ms-3">加入黑名單</button>*@
+                                <div class="form-check ms-3">
+                                    <input class="form-check-input" type="checkbox" id="blacklistCheckbox" onchange="toggleBlacklist()">
+                                    <label class="form-check-label" for="blacklistCheckbox">黑名單</label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -211,8 +259,13 @@
                 // 填充訂單編號、會員名稱、訂單金額、點數折抵
                 $('#modalOrderId').val(response.data.OrderId);
                 $('#modalMemberName').val(response.data.MemberName);
+                $('#modalMemberName').data('member-id', response.data.MemberID);  // 將MemberID保存在data屬性中
                 $('#modalTotalPrice').val(response.data.TotalPrice);
                 $('#modalUsedPoints').val(response.data.UsedPoints);
+
+                // 根据黑名单状态设置复选框状态
+                $('#blacklistCheckbox').prop('checked', response.data.IsBlacklisted);
+
 
                 // 清空之前的表格
                 const tbody = $("#modalOrderItems");
@@ -396,5 +449,34 @@
 
             return jsonDate; // 如果不是 /Date()/ 格式，則直接返回
         }
+
+        function toggleBlacklist() {
+    const isBlacklisted = document.getElementById('blacklistCheckbox').checked;
+    const memberId = $('#modalMemberName').data('member-id');  // 获取MemberID
+
+    $.ajax({
+        url: '@Url.Action("ToggleBlacklist", "Orderlist")',  // 指向控制器中的ToggleBlacklist方法
+        type: 'POST',
+        data: {
+            memberId: memberId,  // 使用获取到的MemberID
+            isBlacklisted: isBlacklisted
+        },
+        success: function (response) {
+            if (response.success) {
+                alert('黑名單狀態已更新');
+            } else {
+                alert('更新失敗: ' + response.message);
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error(xhr, status, error);
+            alert('更新黑名單狀態時發生錯誤');
+        }
+    });
+}
+
+
+
+
     </script>
 }

@@ -2,6 +2,7 @@
 using BreakfastOrderSystem.Site.Models.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -21,10 +22,13 @@ namespace BreakfastOrderSystem.Site.Controllers
 
         public ActionResult Index()
         {
+
+            var today = DateTime.Today;
             // 查詢訂單及相關資料
             var orders = (from o in _db.Orders
                           join m in _db.Members on o.MemberID equals m.Id
-                          where o.OrderStatus == 1
+                          where o.OrderStatus == 1 && o.OrderTime >= today
+                          orderby o.OrderTime descending
                           select new OrderDetailVm
                           {
                               Id = o.Id,
@@ -57,24 +61,43 @@ namespace BreakfastOrderSystem.Site.Controllers
             return View(orders);
         }
 
-
         [HttpPost]
         public ActionResult UpdateOrderStatus(OrderDetailVm model)
         {
             try
             {
+                var today = DateTime.Today;
+
                 // 根據 model.OrderId 查找訂單
-                var order = _db.Orders.FirstOrDefault(o => o.TakeOrderNumber == model.OrderId);
+                var order = _db.Orders.FirstOrDefault(o => o.TakeOrderNumber == model.OrderId && DbFunctions.TruncateTime(o.OrderTime) == today);
 
                 if (order != null)
                 {
                     // 更新訂單狀態
                     order.OrderStatus = model.OrderStatus;
 
-                    // 保存更改
-                    _db.SaveChanges();
+                    // 查找與訂單相關的點數記錄 (假設 PointsDetail 表中有 OrderId 或 MemberId)
+                    var pointDetail = _db.PointDetails.FirstOrDefault(p => p.OrderId == order.Id);  // 假設用 OrderId 來關聯
 
-                    return Json(new { success = true });
+                    if (pointDetail != null)
+                    {
+                        // 如果訂單狀態是棄單 (假設4代表棄單)
+                        if (model.OrderStatus == 4)
+                        {
+                            // 將點數的使用和獲得歸零
+                            pointDetail.Used = 0;
+                            pointDetail.Earned = 0;
+                        }
+
+                        // 保存更改到訂單和點數記錄
+                        _db.SaveChanges();
+
+                        return Json(new { success = true });
+                    }
+                    else
+                    {
+                        return Json(new { success = false, message = "未找到對應的點數記錄" });
+                    }
                 }
                 else
                 {
@@ -86,5 +109,7 @@ namespace BreakfastOrderSystem.Site.Controllers
                 return Json(new { success = false, message = ex.Message });
             }
         }
+
+
     }
 }

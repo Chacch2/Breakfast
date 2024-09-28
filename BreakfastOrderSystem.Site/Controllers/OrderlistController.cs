@@ -1,5 +1,6 @@
 ﻿using BreakfastOrderSystem.Site.Models.EFModels;
 using BreakfastOrderSystem.Site.Models.ViewModels;
+using System;
 using System.Linq;
 using System.Web.Mvc;
 
@@ -18,6 +19,7 @@ namespace BreakfastOrderSystem.Site.Controllers
         public ActionResult Orderlist()
         {
             var orders = _db.Orders
+                 .OrderByDescending(o => o.OrderTime)  // 依照 OrderTime 進行降序排列
                             .Select(o => new OrderlistVm
                             {
                                 OrderId = o.Id,
@@ -43,6 +45,8 @@ namespace BreakfastOrderSystem.Site.Controllers
                     MemberName = o.Member.Name, // 會員名稱（從 Member 表聯結）
                     TotalPrice = o.FinalTotal, // 訂單金額
                     UsedPoints = o.PointsUsed, // 點數折抵
+                    MemberID = o.Member.Id,  // 返回MemberID
+                    IsBlacklisted = o.Member.BlackList,
                     Items = o.OrderDetails.Select(od => new OrderItemVm
                     {
                         ProductName = od.Product.Name, // 商品名稱
@@ -70,6 +74,31 @@ namespace BreakfastOrderSystem.Site.Controllers
             }
 
             return Json(new { success = true, data = orderDetails }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult ToggleBlacklist(int memberId, bool isBlacklisted)
+        {
+            try
+            {
+                // 使用您的DB上下文來尋找會員記錄
+                var member = _db.Members.FirstOrDefault(m => m.Id == memberId);
+                if (member == null)
+                {
+                    return Json(new { success = false, message = "會員不存在" });
+                }
+
+                // 更新黑名單狀態
+                member.BlackList = isBlacklisted;
+                _db.SaveChanges();  // 保存更改
+
+                return Json(new { success = true, message = "黑名單狀態已更新", isBlacklisted = member.BlackList });    
+            }
+            catch (Exception ex)
+            {
+                // 捕捉任何異常
+                return Json(new { success = false, message = "更新失敗: " + ex.Message });
+            }
         }
 
     }
