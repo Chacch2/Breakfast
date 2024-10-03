@@ -52,8 +52,16 @@
         });
     });
 
-    function fetchReportData() {
-        fetch('@Url.Action("GetReportData", "Report")')  // 呼叫控制器的 Action 來抓取數據
+     function fetchReportData() {
+        // 取得開始日期和結束日期的值
+        var startDate = document.getElementById('startDate').value;
+        var endDate = document.getElementById('endDate').value;
+
+        // 構建查詢參數
+        var query = `?startDate=${startDate}&endDate=${endDate}`;
+
+        // 發送 AJAX 請求到後端
+        fetch('@Url.Action("GetReportData", "Report")' + query)
             .then(response => response.json())
             .then(data => {
                 // 更新頁面中的數據

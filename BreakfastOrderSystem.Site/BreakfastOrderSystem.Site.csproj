@@ -232,6 +232,7 @@
     <Content Include="Views\Point\PointDetails.cshtml" />
     <Content Include="Views\Orderlist\Orderlist.cshtml" />
     <Content Include="Views\Report\Index.cshtml" />
+    <Content Include="Views\Report\Index2.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

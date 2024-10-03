@@ -1,0 +1,173 @@
+﻿@model BreakfastOrderSystem.Site.Models.ViewModels.ReportVm
+
+@{
+    ViewBag.Title = "營業趨勢圖";
+}
+
+<h3>營業趨勢圖</h3>
+<div class="container">
+    <div class="header">
+        <div class="date-range d-flex align-items-center">
+            <!-- 開始日期 -->
+            <div class="d-flex align-items-center me-2">
+                <label for="startDate" class="mb-0 me-1" style="margin-right: 0.5rem;">開始日期: </label>
+                <input type="date" id="startDate" class="form-control" aria-label="Start Date">
+            </div>
+
+            <!-- 結束日期 -->
+            <div class="d-flex align-items-center me-2">
+                <label for="endDate" class="mb-0 me-1" style="margin-right: 0.5rem;">結束日期: </label>
+                <input type="date" id="endDate" class="form-control" aria-label="End Date">
+            </div>
+
+            <button class="btn btn-light" type="button" id="searchButton">搜尋</button>
+        </div>
+    </div>
+
+    <div class="charts">
+        <!-- 營業額的長條圖 -->
+        <div>
+            <canvas id="salesChart"></canvas>
+        </div>
+
+        <!-- 會員數的折線圖 -->
+        <div>
+            <canvas id="membersChart"></canvas>
+        </div>
+
+        <!-- 熱銷商品表格 -->
+        <div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>商品</th>
+                        <th>數量</th>
+                    </tr>
+                </thead>
+                <tbody id="hotItemsTableBody">
+                    <!-- 熱銷商品動態生成 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 頁面加載時立即抓取數據
+        fetchReportData();
+
+        // 綁定搜尋按鈕的點擊事件
+        document.getElementById('searchButton').addEventListener('click', function () {
+            fetchReportData();
+        });
+    });
+
+    function fetchReportData() {
+        var startDate = document.getElementById('startDate').value;
+        var endDate = document.getElementById('endDate').value;
+
+        var query = `?startDate=${startDate}&endDate=${endDate}`;
+
+        fetch('@Url.Action("GetReportData2", "Report")' + query)
+            .then(response => response.json())
+            .then(data => {
+                updateSalesChart(data.SalesData);
+                updateMembersChart(data.SalesData);
+                updateHotItemsTable(data.HotItems);
+            })
+            .catch(error => console.error('Error fetching report data:', error));
+    }
+
+    function updateSalesChart(salesData) {
+        var salesCtx = document.getElementById('salesChart').getContext('2d');
+        var salesLabels = salesData.map(d => d.Month + "月");
+        var salesValues = salesData.map(d => d.TotalSales);
+
+        new Chart(salesCtx, {
+            type: 'bar',
+            data: {
+                labels: salesLabels,
+                datasets: [{
+                    label: '營業額',
+                    data: salesValues,
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        stepSize: 20000  // Y軸以 20000 為區間
+                    }
+                }
+            }
+        });
+    }
+
+    function updateMembersChart(salesData) {
+        var membersCtx = document.getElementById('membersChart').getContext('2d');
+        var membersLabels = salesData.map(d => d.Month + "月");
+        var membersValues = salesData.map(d => d.TotalMembers);
+
+        new Chart(membersCtx, {
+            type: 'line',
+            data: {
+                labels: membersLabels,
+                datasets: [{
+                    label: '會員數',
+                    data: membersValues,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        stepSize: 10  // Y軸以 10 為區間
+                    }
+                }
+            }
+        });
+    }
+
+    function updateHotItemsTable(hotItems) {
+        var tableBody = document.getElementById('hotItemsTableBody');
+        tableBody.innerHTML = '';  // 清空表格
+
+        hotItems.forEach(item => {
+            var row = document.createElement('tr');
+            row.innerHTML = `<td>${item.ProductName}</td><td>${item.Quantity}</td>`;
+            tableBody.appendChild(row);
+        });
+    }
+</script>
+
+<style>
+    .container {
+        margin-top: 20px;
+    }
+
+    .charts {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    canvas {
+        width: 400px;
+        height: 300px;
+    }
+
+    table {
+        width: 300px;
+        margin-top: 20px;
+    }
+</style>
+
+
+
