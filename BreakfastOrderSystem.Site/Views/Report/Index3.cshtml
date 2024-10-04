@@ -1,0 +1,129 @@
+﻿@model BreakfastOrderSystem.Site.Models.ViewModels.ProductSalesVm
+
+@{
+    ViewBag.Title = "商品銷售統計";
+}
+
+<h3>商品銷售統計</h3>
+<div class="container">
+    <div class="header d-flex justify-content-between align-items-center">
+        <!-- 開始日期 -->
+        <div class="d-flex align-items-center me-2">
+            <label for="startDate" class="mb-0 me-1">開始日期:</label>
+            <input type="date" id="startDate" class="form-control" aria-label="Start Date">
+        </div>
+
+        <!-- 結束日期 -->
+        <div class="d-flex align-items-center me-2">
+            <label for="endDate" class="mb-0 me-1">結束日期:</label>
+            <input type="date" id="endDate" class="form-control" aria-label="End Date">
+        </div>
+
+        <button class="btn btn-primary" type="button" id="searchButton">搜尋</button>
+    </div>
+
+    <!-- 商品銷售表格 -->
+    <table class="table table-bordered mt-4">
+        <thead>
+            <tr>
+                <th>商品</th>
+                <th>數量</th>
+            </tr>
+        </thead>
+        <tbody id="productTableBody">
+            <!-- 商品動態生成 -->
+        </tbody>
+    </table>
+
+    <!-- 分頁控制 -->
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center" id="pagination">
+            <!-- 分頁動態生成 -->
+        </ul>
+    </nav>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 頁面加載時立即抓取數據
+        fetchReportData();
+
+        // 綁定搜尋按鈕的點擊事件
+        document.getElementById('searchButton').addEventListener('click', function () {
+            fetchReportData();
+        });
+    });
+
+    function fetchReportData(page = 1) {
+        // 取得開始日期和結束日期的值
+        var startDate = document.getElementById('startDate').value;
+        var endDate = document.getElementById('endDate').value;
+
+        // 構建查詢參數
+        var query = `?startDate=${startDate}&endDate=${endDate}&page=${page}`;
+
+        // 發送 AJAX 請求到後端
+        fetch('@Url.Action("GetReportData3", "Report")' + query)
+            .then(response => response.json())
+            .then(data => {
+                updateProductTable(data.Products);
+                updatePagination(data.Pagination);
+            })
+            .catch(error => console.error('Error fetching report data:', error));
+    }
+
+    function updateProductTable(products) {
+        var tableBody = document.getElementById('productTableBody');
+        tableBody.innerHTML = '';  // 清空表格
+
+        products.forEach(product => {
+            var row = document.createElement('tr');
+            row.innerHTML = `<td>${product.ProductName}</td><td>${product.Quantity}</td>`;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function updatePagination(pagination) {
+        var paginationUl = document.getElementById('pagination');
+        paginationUl.innerHTML = '';  // 清空分頁
+
+        var currentPage = pagination.CurrentPage;
+        var totalPages = pagination.TotalPages;
+
+        // 生成前一頁按鈕
+        if (currentPage > 1) {
+            paginationUl.innerHTML += `<li class="page-item"><a class="page-link" href="#" onclick="fetchReportData(${currentPage - 1})">上一頁</a></li>`;
+        }
+
+        // 生成分頁按鈕，最多顯示 5 頁
+        var startPage = Math.max(1, currentPage - 2);
+        var endPage = Math.min(totalPages, currentPage + 2);
+
+        for (var i = startPage; i <= endPage; i++) {
+            paginationUl.innerHTML += `<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="fetchReportData(${i})">${i}</a></li>`;
+        }
+
+        // 生成下一頁按鈕
+        if (currentPage < totalPages) {
+            paginationUl.innerHTML += `<li class="page-item"><a class="page-link" href="#" onclick="fetchReportData(${currentPage + 1})">下一頁</a></li>`;
+        }
+    }
+</script>
+
+<style>
+    .container {
+        margin-top: 20px;
+    }
+
+    .table {
+        width: 100%;
+        text-align: center;
+    }
+
+    .pagination {
+        margin: 0;
+    }
+</style>
+
+

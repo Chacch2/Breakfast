@@ -169,6 +169,7 @@
     <Compile Include="Models\ViewModels\OrderDetailVm.cs" />
     <Compile Include="Models\ViewModels\OrderlistVm.cs" />
     <Compile Include="Models\ViewModels\PointDetailVm.cs" />
+    <Compile Include="Models\ViewModels\ProductSalesVm.cs" />
     <Compile Include="Models\ViewModels\ReportVm.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -233,6 +234,7 @@
     <Content Include="Views\Orderlist\Orderlist.cshtml" />
     <Content Include="Views\Report\Index.cshtml" />
     <Content Include="Views\Report\Index2.cshtml" />
+    <Content Include="Views\Report\Index3.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

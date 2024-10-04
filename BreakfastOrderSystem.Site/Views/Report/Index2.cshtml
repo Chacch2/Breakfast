@@ -1,53 +1,34 @@
-﻿@model BreakfastOrderSystem.Site.Models.ViewModels.ReportVm
-
-@{
+﻿@{
     ViewBag.Title = "營業趨勢圖";
 }
 
 <h3>營業趨勢圖</h3>
 <div class="container">
-    <div class="header">
-        <div class="date-range d-flex align-items-center">
-            <!-- 開始日期 -->
-            <div class="d-flex align-items-center me-2">
-                <label for="startDate" class="mb-0 me-1" style="margin-right: 0.5rem;">開始日期: </label>
-                <input type="date" id="startDate" class="form-control" aria-label="Start Date">
-            </div>
-
-            <!-- 結束日期 -->
-            <div class="d-flex align-items-center me-2">
-                <label for="endDate" class="mb-0 me-1" style="margin-right: 0.5rem;">結束日期: </label>
-                <input type="date" id="endDate" class="form-control" aria-label="End Date">
-            </div>
-
-            <button class="btn btn-light" type="button" id="searchButton">搜尋</button>
+    <div class="header d-flex justify-content-between align-items-center" style="white-space: nowrap;">
+        <!-- 開始月份 -->
+        <div class="d-flex align-items-center me-2">
+            <label for="startMonth" class="mb-0 me-1">開始月份:</label>
+            <input type="month" id="startMonth" class="form-control" aria-label="Start Month" style="width: 150px;">
         </div>
+
+        <!-- 結束月份 -->
+        <div class="d-flex align-items-center me-2">
+            <label for="endMonth" class="mb-0 me-1">結束月份:</label>
+            <input type="month" id="endMonth" class="form-control" aria-label="End Month" style="width: 150px;">
+        </div>
+
+        <button class="btn btn-primary" type="button" id="searchButton">搜尋</button>
     </div>
 
-    <div class="charts">
+    <div class="charts d-flex justify-content-between mt-4">
         <!-- 營業額的長條圖 -->
-        <div>
+        <div style="width: 45%;">
             <canvas id="salesChart"></canvas>
         </div>
 
         <!-- 會員數的折線圖 -->
-        <div>
+        <div style="width: 45%;">
             <canvas id="membersChart"></canvas>
-        </div>
-
-        <!-- 熱銷商品表格 -->
-        <div>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>商品</th>
-                        <th>數量</th>
-                    </tr>
-                </thead>
-                <tbody id="hotItemsTableBody">
-                    <!-- 熱銷商品動態生成 -->
-                </tbody>
-            </table>
         </div>
     </div>
 </div>
@@ -65,17 +46,19 @@
     });
 
     function fetchReportData() {
-        var startDate = document.getElementById('startDate').value;
-        var endDate = document.getElementById('endDate').value;
+        // 取得開始月份和結束月份的值
+        var startMonth = document.getElementById('startMonth').value;
+        var endMonth = document.getElementById('endMonth').value;
 
-        var query = `?startDate=${startDate}&endDate=${endDate}`;
+        // 構建查詢參數
+        var query = `?startMonth=${startMonth}&endMonth=${endMonth}`;
 
+        // 發送 AJAX 請求到後端
         fetch('@Url.Action("GetReportData2", "Report")' + query)
             .then(response => response.json())
             .then(data => {
                 updateSalesChart(data.SalesData);
                 updateMembersChart(data.SalesData);
-                updateHotItemsTable(data.HotItems);
             })
             .catch(error => console.error('Error fetching report data:', error));
     }
@@ -135,17 +118,6 @@
             }
         });
     }
-
-    function updateHotItemsTable(hotItems) {
-        var tableBody = document.getElementById('hotItemsTableBody');
-        tableBody.innerHTML = '';  // 清空表格
-
-        hotItems.forEach(item => {
-            var row = document.createElement('tr');
-            row.innerHTML = `<td>${item.ProductName}</td><td>${item.Quantity}</td>`;
-            tableBody.appendChild(row);
-        });
-    }
 </script>
 
 <style>
@@ -159,15 +131,15 @@
     }
 
     canvas {
-        width: 400px;
+        width: 100%; /* 保證圖表寬度適應容器 */
         height: 300px;
     }
 
-    table {
-        width: 300px;
-        margin-top: 20px;
+    .header {
+        margin-bottom: 20px;
     }
+
+        .header label {
+            white-space: nowrap; /* 確保標籤不換行 */
+        }
 </style>
-
-
-
