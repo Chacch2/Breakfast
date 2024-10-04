@@ -7,19 +7,20 @@
 <h3>營業概況</h3>
 <div class="container">
     <div class="header">
-        <div class="date-range d-flex align-items-center">
+        <div class="date-range d-flex align-items-center" style="gap: 10px;">
             <!-- 開始日期 -->
-            <div class="d-flex align-items-center me-2">
-                <label for="startDate" class="mb-0 me-1" style="margin-right: 0.5rem;">開始日期: </label>
-                <input type="date" id="startDate" class="form-control" aria-label="Start Date" style="flex: 1;">
+            <div class="d-flex align-items-center" style="gap: 5px;">
+                <label for="startDate" class="mb-0">開始日期:</label>
+                <input type="date" id="startDate" class="form-control" aria-label="Start Date" style="width: 150px;">
             </div>
 
             <!-- 結束日期 -->
-            <div class="d-flex align-items-center me-2">
-                <label for="endDate" class="mb-0 me-1" style="margin-right: 0.5rem;">結束日期: </label>
-                <input type="date" id="endDate" class="form-control" aria-label="End Date" style="flex: 1;">
+            <div class="d-flex align-items-center" style="gap: 5px;">
+                <label for="endDate" class="mb-0">結束日期:</label>
+                <input type="date" id="endDate" class="form-control" aria-label="End Date" style="width: 150px;">
             </div>
-            <button class="btn btn-light" type="button" id="searchButton">搜尋</button>
+            <!-- 修改按钮样式 -->
+            <button class="btn btn-primary" type="button" id="searchButton">搜尋</button>
         </div>
     </div>
     <div class="stats">
@@ -40,6 +41,7 @@
         </div>
     </div>
 </div>
+
 @section Scripts {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -93,31 +95,38 @@
     }
     </script>
 }
+
 <style>
     /* 與之前的CSS相同 */
     .header {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start; /* 修改为靠左对齐 */
         align-items: center;
         padding-bottom: 10px;
         margin-bottom: 20px;
     }
 
-    .date-range input {
-        margin: 0 5px;
-        padding: 5px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+    .date-range {
+        display: flex;
+        align-items: center;
+        gap: 10px; /* 控制各个元素之间的间距 */
     }
 
-    .date-range button {
-        padding: 6px 12px;
-        background-color: #e6e6e6;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        color: #A2A2A2 !important;
-    }
+        .date-range input {
+            margin: 0 5px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .date-range button {
+            padding: 6px 12px;
+            background-color: #007bff; /* 修改背景色为蓝色 */
+            color: white; /* 修改文字为白色 */
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
 
     .stats {
         display: flex;
