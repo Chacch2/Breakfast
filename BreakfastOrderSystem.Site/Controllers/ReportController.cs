@@ -2,6 +2,7 @@
 using BreakfastOrderSystem.Site.Models.ViewModels;
 using System;
 using System.Linq;
+using System.Net;
 using System.Web.Mvc;
 
 namespace BreakfastOrderSystem.Site.Controllers
@@ -73,29 +74,39 @@ namespace BreakfastOrderSystem.Site.Controllers
         public ActionResult GetReportData2(string startMonth, string endMonth)
         {
             DateTime today = DateTime.Now;
-
             DateTime startDate, endDate;
 
             // 如果沒有提供月份範圍，預設為最近四個月
             if (string.IsNullOrEmpty(startMonth) || string.IsNullOrEmpty(endMonth))
             {
+                // 預設顯示最近四個月的數據
                 startDate = new DateTime(today.Year, today.Month, 1).AddMonths(-3);
                 endDate = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
             }
             else
             {
-                // 根據用戶選擇的月份範圍解析 startDate 和 endDate
-                startDate = DateTime.Parse(startMonth + "-01");
-                endDate = DateTime.Parse(endMonth + "-01").AddMonths(1).AddTicks(-1);  // 包含選定月份的整個月份
+                // 當用戶提供月份範圍時，解析開始和結束月份
+                try
+                {
+                    // 解析開始月份
+                    startDate = DateTime.Parse(startMonth + "-01");
+
+                    // 解析結束月份，並將該月份的最後一天作為結束範圍
+                    endDate = DateTime.Parse(endMonth + "-01");
+                    endDate = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
+                }
+                catch (Exception ex)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "無效的月份格式");
+                }
             }
 
-            // 計算最近四個月範圍的月份
-            var months = Enumerable.Range(0, 4)
-                .Select(i => today.AddMonths(-i))
-                .OrderBy(m => m)
-                .ToList();
+            // 計算用戶選擇的月份範圍
+            var selectedMonths = Enumerable.Range(0, (endDate.Year - startDate.Year) * 12 + endDate.Month - startDate.Month + 1)
+                                           .Select(i => new DateTime(startDate.Year, startDate.Month, 1).AddMonths(i))
+                                           .ToList();
 
-            // 營業數據
+            // 查詢範圍內的數據，按年份和月份分組
             var salesData = _db.Orders
                 .Where(o => o.OrderTime >= startDate && o.OrderTime <= endDate)
                 .GroupBy(o => new { o.OrderTime.Year, o.OrderTime.Month })
@@ -107,8 +118,8 @@ namespace BreakfastOrderSystem.Site.Controllers
                 })
                 .ToList();
 
-            // 填充沒有資料的月份，確保最近四個月全部顯示
-            foreach (var month in months)
+            // 將沒有數據的月份補全，確保每個月份都顯示
+            foreach (var month in selectedMonths)
             {
                 if (!salesData.Any(d => d.Month == month.Month))
                 {
@@ -121,7 +132,7 @@ namespace BreakfastOrderSystem.Site.Controllers
                 }
             }
 
-            // 根據月份排序
+            // 按月份排序，確保結果按時間順序顯示
             salesData = salesData.OrderBy(d => d.Month).ToList();
 
             var reportVm = new ReportVm
