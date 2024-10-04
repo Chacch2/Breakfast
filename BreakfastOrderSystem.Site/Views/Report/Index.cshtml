@@ -40,8 +40,28 @@
         </div>
     </div>
 </div>
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
 
-<script>
+        $(document).ready(function () {
+            // 初始化 flatpickr，將日期格式設定為 年/月/日
+            flatpickr("#startDate", {
+                dateFormat: "Y/m/d",  // 使用 "年/月/日" 格式
+                locale: {
+                    firstDayOfWeek: 1  // 將周一設為每周的第一天
+                }
+            });
+
+            flatpickr("#endDate", {
+                dateFormat: "Y/m/d",  // 使用 "年/月/日" 格式
+                locale: {
+                    firstDayOfWeek: 1  // 將周一設為每周的第一天
+                }
+            });
+        });
+
     document.addEventListener('DOMContentLoaded', function () {
         // 頁面加載時立即抓取數據
         fetchReportData();
@@ -71,8 +91,8 @@
             })
             .catch(error => console.error('Error fetching report data:', error));
     }
-</script>
-
+    </script>
+}
 <style>
     /* 與之前的CSS相同 */
     .header {

@@ -47,7 +47,6 @@
         font-size: 18px;
         color: white; /* 勾选符号颜色 */
     }
-
 </style>
 <h2 class="fw-bold mt-2 mb-4">訂單列表</h2>
 
@@ -194,7 +193,27 @@
 
 
 @section Scripts {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
+
+        $(document).ready(function () {
+            // 初始化 flatpickr，將日期格式設定為 年/月/日
+            flatpickr("#startDate", {
+                dateFormat: "Y/m/d",  // 使用 "年/月/日" 格式
+                locale: {
+                    firstDayOfWeek: 1  // 將周一設為每周的第一天
+                }
+            });
+
+            flatpickr("#endDate", {
+                dateFormat: "Y/m/d",  // 使用 "年/月/日" 格式
+                locale: {
+                    firstDayOfWeek: 1  // 將周一設為每周的第一天
+                }
+            });
+        });
+
         // 將 Razor 模型數據序列化為 JavaScript 對象
         let initialOrders = @Html.Raw(Json.Encode(Model));
         let allOrders = [...initialOrders]; // 創建一個副本來進行後續操作
